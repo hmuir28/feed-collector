@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web UI with JSON</title>
+</head>
+<body>
+    <h1>JSON API Example</h1>
+    <button onclick="fetchData()">Get JSON</button>
+    <pre id="output"></pre>
+
+    <script>
+        function fetchData() {
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => document.getElementById("output").innerText = JSON.stringify(data, null, 2));
+        }
+    </script>
+</body>
+</html>
