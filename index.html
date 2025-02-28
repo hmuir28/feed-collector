@@ -1,18 +1,40 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Web UI with JSON</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POST URL Example</title>
 </head>
 <body>
-    <h1>JSON API Example</h1>
-    <button onclick="fetchData()">Get JSON</button>
-    <pre id="output"></pre>
+    <h2>Enter URL and Send POST Request</h2>
+    
+    <input type="text" id="urlInput" placeholder="Enter URL">
+    <button onclick="sendPostRequest()">Send</button>
+    
+    <p>Response:</p>
+    <pre id="response"></pre>
 
     <script>
-        function fetchData() {
-            fetch('/api/data')
-                .then(response => response.json())
-                .then(data => document.getElementById("output").innerText = JSON.stringify(data, null, 2));
+        function sendPostRequest() {
+            const urlValue = document.getElementById("urlInput").value;
+
+            if (!urlValue) {
+                alert("Please enter a URL.");
+                return;
+            }
+
+            fetch("http://localhost:8080/api/feed", {  // Change to your server URL
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: urlValue })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("response").innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                document.getElementById("response").innerText = "Error: " + error;
+            });
         }
     </script>
 </body>

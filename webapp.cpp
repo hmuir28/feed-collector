@@ -9,6 +9,12 @@
 
 using json = nlohmann::json;
 
+struct RSSItem {
+  std::string title;
+  std::string link;
+  std::string description;
+};
+
 // Function to read HTML file
 std::string readFile(const std::string &filename) {
     std::ifstream file(filename);
@@ -48,63 +54,75 @@ std::string fetchRSSFeed(const std::string& url) {
     return rssData;
 }
 
-// Function to parse and display RSS feed data
-void parseRSSFeed(const std::string& xmlData) {
-    pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_string(xmlData.c_str());
+std::vector<RSSItem> parseRSSFeed(const std::string& xmlData) {
+  pugi::xml_document doc;
+  pugi::xml_parse_result result = doc.load_string(xmlData.c_str());
 
-    if (!result) {
-        std::cerr << "Failed to parse RSS XML: " << result.description() << "\n";
-        return;
-    }
+  if (!result) {
+      std::cerr << "Failed to parse RSS XML: " << result.description() << "\n";
+      return {};  // Return an empty vector
+  }
 
-    // Iterate through <item> tags in the RSS feed
-    for (pugi::xml_node item : doc.child("rss").child("channel").children("item")) {
-        std::cout << "Title: " << item.child("title").text().as_string() << std::endl;
-        std::cout << "Link: " << item.child("link").text().as_string() << std::endl;
-        std::cout << "Description: " << item.child("description").text().as_string() << std::endl;
-        std::cout << "---------------------------------\n";
-    }
+  std::vector<RSSItem> rssItems;
+
+  // Iterate and store data into the vector
+  for (pugi::xml_node item : doc.child("rss").child("channel").children("item")) {
+      RSSItem rssItem;
+      rssItem.title = item.child("title").text().as_string();
+      rssItem.link = item.child("link").text().as_string();
+      rssItem.description = item.child("description").text().as_string();
+      rssItems.push_back(rssItem);
+  }
+
+  return rssItems;
 }
 
 int main() {
-    // std::string rssUrl = "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml";  // Example RSS feed
-    // std::string rssData = fetchRSSFeed(rssUrl);
-
-    // if (!rssData.empty()) {
-    //     parseRSSFeed(rssData);
-    // } else {
-    //     std::cerr << "Failed to fetch RSS feed.\n";
-    // }
-
     httplib::Server svr;
 
-    // Serve HTML file
     svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
       res.set_content(readFile("index.html"), "text/html");
-  });
-
-    // GET endpoint: Returns JSON data
-    svr.Get("/api/data", [](const httplib::Request&, httplib::Response& res) {
-        json response = {
-            {"message", "Hello from C++"},
-            {"status", "success"},
-            {"timestamp", time(nullptr)}
-        };
-        res.set_content(response.dump(), "application/json");
     });
 
+    // GET endpoint: Returns JSON data
+    // Will be used soon
+    // svr.Get("/api/data", [](const httplib::Request&, httplib::Response& res) {
+    //     json response = {
+    //         {"message", "Hello from C++"},
+    //         {"status", "success"},
+    //         {"timestamp", time(nullptr)}
+    //     };
+    //     res.set_content(response.dump(), "application/json");
+    // });
+
     // POST endpoint: Receives JSON and responds
-    svr.Post("/api/data", [](const httplib::Request& req, httplib::Response& res) {
-        try {
-            json received = json::parse(req.body);
-            std::string name = received["name"];
-            json response = {{"message", "Hello, " + name + "!"}, {"status", "success"}};
+    svr.Post("/api/feed", [](const httplib::Request& req, httplib::Response& res) {
+      try {
+        json received = json::parse(req.body);
+        std::string rssUrl = received["url"];
+
+        std::string rssData = fetchRSSFeed(rssUrl);
+        std::vector<RSSItem> rssItems = parseRSSFeed(rssData);
+
+        if (!rssItems.empty()) {
+            json responseJson = json::array();
+            for (const auto& item : rssItems) {
+                responseJson.push_back({
+                    {"title", item.title},
+                    {"link", item.link},
+                    {"description", item.description}
+                });
+            }
+
+            res.set_content(responseJson.dump(), "application/json");
+        } else {
+            json response = {{"message", "No RSS items found."}, {"status", "error"}};
             res.set_content(response.dump(), "application/json");
-        } catch (...) {
-            res.status = 400;
-            res.set_content(R"({"error": "Invalid JSON"})", "application/json");
         }
+      } catch (...) {
+          res.status = 400;
+          res.set_content(R"({"error": "Invalid JSON"})", "application/json");
+      }
     });
 
     std::cout << "Server running at http://localhost:8080" << std::endl;
