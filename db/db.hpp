@@ -18,8 +18,10 @@ void execute_query(CassSession* session, const std::string& query) {
 }
 
 CassSession* connect_to_cassandra() {
+  const char* ip_addr = getenv("CASSANDRA_IP");
+
   CassCluster* cluster = cass_cluster_new();
-  cass_cluster_set_contact_points(cluster, "127.0.0.1");  // Cassandra host
+  cass_cluster_set_contact_points(cluster, ip_addr);  // Cassandra host
 
   CassSession* session = cass_session_new();
   CassFuture* connect_future = cass_session_connect(session, cluster);

@@ -6,17 +6,20 @@
 #include "httplib.h"
 #include "json.hpp"
 #include "controller/feed.controller.hpp"
+#include "util/env_load.hpp"
 #include <iostream>
 
 int main() {
-    httplib::Server svr;
+  loadEnvVariables("config.env");
 
-    svr.Get("/", handleGETIndexUI);
+  httplib::Server svr;
 
-    svr.Post("/api/feed", handlePOSTFeed);
+  svr.Get("/", handleGETIndexUI);
 
-    std::cout << "Server running at http://localhost:8080" << std::endl;
-    svr.listen("0.0.0.0", 8080);
+  svr.Post("/api/feed", handlePOSTFeed);
 
-    return 0;
+  std::cout << "Server running at http://localhost:8080" << std::endl;
+  svr.listen("0.0.0.0", 8080);
+
+  return 0;
 }
