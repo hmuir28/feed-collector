@@ -5,16 +5,11 @@
 
 #include "../httplib.h"
 #include "../json.hpp"
+#include "../model/feed.model.hpp"
+#include "../service/feed.service.hpp"
 #include <iostream>
 
-
 using json = nlohmann::json;
-
-struct RSSItem {
-  std::string title;
-  std::string link;
-  std::string description;
-};
 
 std::string readFile(const std::string &filename) {
     std::ifstream file(filename);
@@ -69,6 +64,8 @@ std::vector<RSSItem> parseRSSFeed(const std::string& xmlData) {
       rssItem.link = item.child("link").text().as_string();
       rssItem.description = item.child("description").text().as_string();
       rssItems.push_back(rssItem);
+
+      insertFeed(rssItem);
   }
 
   return rssItems;
@@ -87,16 +84,8 @@ void handlePOSTFeed(const httplib::Request& req, httplib::Response& res) {
     std::vector<RSSItem> rssItems = parseRSSFeed(rssData);
 
     if (!rssItems.empty()) {
-      json responseJson = json::array();
-      for (const auto& item : rssItems) {
-        responseJson.push_back({
-          {"title", item.title},
-          {"link", item.link},
-          {"description", item.description}
-        });
-      }
-
-      res.set_content(responseJson.dump(), "application/json");
+      json response = {{"message", "RSS items successully registered"}, {"status", "success"}};
+      res.set_content(response.dump(), "application/json");
     } else {
       json response = {{"message", "No RSS items found."}, {"status", "error"}};
       res.set_content(response.dump(), "application/json");
