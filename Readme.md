@@ -2,6 +2,14 @@
 
 ## Run the following
 
+### Eenvironment variables setup
+
+#### Create a file called config.env
+
+```
+CASSANDRA_IP=127.0.0.1
+```
+
 ### Build an executable
 
 ```
