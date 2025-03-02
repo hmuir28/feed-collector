@@ -2,7 +2,7 @@
 
 ## Run the following
 
-### Eenvironment variables setup
+### Environment variables setup
 
 #### Create a file called config.env
 
